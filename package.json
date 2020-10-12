@@ -1,0 +1,30 @@
+{
+  "name": "payments",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@babel/preset-react": "^7.10.4",
+    "@types/express": "^4.17.8",
+    "@types/jest": "^26.0.14",
+    "@types/mocha": "^8.0.0",
+    "@types/selenium-webdriver": "^4.0.9",
+    "express": "^4.17.1",
+    "jest": "^26.5.2",
+    "jest-runner-mocha": "^0.6.0",
+    "mocha": "^8.0.1",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "selenium-webdriver": "^4.0.0-alpha.7",
+    "ts-jest": "^26.4.1",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7"
+  },
+  "scripts": {
+    "billings": "mocha --timeout 300000 -r ts-node/register 'src/jobs/billings.ts'",
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "preset": "ts-jest"
+  },
+  "devDependencies": {}
+}
