@@ -1,10 +1,11 @@
 import { Locator, WebDriver, WebElement, WebElementPromise } from "selenium-webdriver";
-import { AugmentedThenableWebDriver, AugmentedWebDriver } from "./driver/model";
-import { logFindElementError } from "./utils/logging";
+import { AugmentedThenableWebDriver, AugmentedWebDriver, WithFind } from "./driver/model";
+import { logFindElementError } from "./logging";
+import { Component, ComponentClass, componentFactory } from "./component";
 
 type WebElementClass = new(...args: any[]) => WebElement;
 
-export interface AugmentedWebElement extends Omit<WebElement, 'findElement' | 'getDriver'> {
+export interface AugmentedWebElement extends Omit<WebElement, 'findElement' | 'getDriver'>, WithFind {
   getDriver(): AugmentedThenableWebDriver;
   clickAnyway(): Promise<void>;
   click(): Promise<void>;
@@ -14,13 +15,16 @@ export interface AugmentedWebElement extends Omit<WebElement, 'findElement' | 'g
    * https://github.com/SeleniumHQ/selenium/issues/4971
    */
   expandShadowElement(): ElementPromise;
-  findElement(locator: Locator, timeout?: number): ElementPromise;
 }
 
 type AugmentedWebElementClass = new(...args: any[]) => AugmentedWebElement;
 
 function classFactory<TBaseClass extends WebElementClass>(BaseClass: TBaseClass): AugmentedWebElementClass {
   return class extends BaseClass implements AugmentedWebElement {
+
+    findComponent<T extends Component>(componentClass: ComponentClass<T>): Promise<T> {
+      return componentFactory(componentClass, this);
+    }
 
     async click(): Promise<void> {
       try {
@@ -109,4 +113,8 @@ export class Element extends classFactory(WebElement) {
 
 export function fromWebElement(driver: AugmentedThenableWebDriver, webElement: WebElement): Element {
   return new Element(driver, webElement.getId());
+}
+
+export function isElement(val: Element | AugmentedThenableWebDriver): val is Element {
+  return !!(val as Element).getDriver;
 }

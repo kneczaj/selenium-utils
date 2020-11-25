@@ -7,5 +7,7 @@ export const STANDARD_SCREEN: ScreenSize = {
 
 export const DEFAULT_DRIVER_PARAMS: DriverParams = {
   screenSize: STANDARD_SCREEN,
-  timeout: 5000
+  timeout: 5000,
+  limitErrorMessageToBody: true,
+  removeScriptTagsFromLog: true
 }

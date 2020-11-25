@@ -8,22 +8,35 @@ import {
 } from 'selenium-webdriver';
 import { AugmentedThenableWebDriver, AugmentedWebDriver, DriverParams, ScreenSize } from "./model";
 import { ElementPromise, fromWebElement } from "../element";
-import { logFindElementError } from "../utils/logging";
+import { logFindElementError } from "../logging";
+import { Component, ComponentClass, componentFactory } from "../component";
+import { By } from "../by";
+// @ts-ignore
+import { html } from 'js-beautify';
+
+const SCRIPT_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
+
+function removeScriptTags(text: string) {
+  while (SCRIPT_REGEX.test(text)) {
+    text = text.replace(SCRIPT_REGEX, "");
+  }
+  return text;
+}
 
 /**
  * This adds internal overrides used by the tests
  * @param driver the driver to augment
- * @param defaultTimeout wait timeout in milliseconds
+ * @param params driver parameters
  * @param baseUrl the url used to resolve relative paths
  */
-export function augmentDriver(driver: WebDriver, defaultTimeout: number, baseUrl: string): AugmentedThenableWebDriver {
+export function augmentDriver(driver: WebDriver, params: DriverParams, baseUrl: string): AugmentedThenableWebDriver {
   const originalGet = driver.get.bind(driver);
   /**
    * Add waiting for an element up to timeout to standard findElement function.
    * @param locator
    * @param timeout
    */
-  function findWithWait(this: AugmentedThenableWebDriver, locator: Locator, timeout: number = defaultTimeout): ElementPromise {
+  function findWithWait(this: AugmentedThenableWebDriver, locator: Locator, timeout: number = params.timeout): ElementPromise {
     return new ElementPromise(
       this,
       (async () => {
@@ -41,6 +54,18 @@ export function augmentDriver(driver: WebDriver, defaultTimeout: number, baseUrl
   function getRelative(relativeUrl: string) {
     return originalGet(new URL(relativeUrl, baseUrl).href);
   }
+  function findComponent<T extends Component>(this: AugmentedThenableWebDriver, componentClass: ComponentClass<T>): Promise<T> {
+    return componentFactory(componentClass, this)
+  }
+  async function getPageSource(): Promise<string> {
+    const page = params.limitErrorMessageToBody
+      ? await driver.findElement(By.css('body')).getAttribute('innerHTML')
+      : await driver.getPageSource();
+    if (!params.removeScriptTagsFromLog) {
+      return html(page);
+    }
+    return html(removeScriptTags(page));
+  }
   // WARNING: Object.assign actually mutates driver!
   return (<any>Object).assign(driver, {
     /**
@@ -54,7 +79,9 @@ export function augmentDriver(driver: WebDriver, defaultTimeout: number, baseUrl
      */
     noWaitFindElement: driver.findElement,
     getAbsolute: originalGet,
-    get: getRelative
+    get: getRelative,
+    findComponent,
+    getPageSource
   });
 }
 
@@ -64,5 +91,5 @@ export function getDriver(screenSize: ScreenSize): ThenableWebDriver {
 }
 
 export async function getAugmentedDriver(params: DriverParams, baseUrl: string): Promise<AugmentedWebDriver> {
-  return augmentDriver(await getDriver(params.screenSize), params.timeout, baseUrl);
+  return augmentDriver(await getDriver(params.screenSize), params, baseUrl);
 }

@@ -1,5 +1,5 @@
 import { Locator } from "selenium-webdriver";
-import { isBy } from "../by";
+import { isBy } from "./by";
 
 export function stringifyLocator(locator: Locator): string | Locator {
   if (isBy(locator)) {

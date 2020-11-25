@@ -1,6 +1,6 @@
 import { getUrl, runTestServer } from "./test-content";
-import { e2eTest } from "../test-base";
-import { By } from "../by";
+import { e2eTest } from "./test-base";
+import { By } from "./by";
 import * as http from "http";
 
 e2eTest('Test content', getUrl(), driver => {

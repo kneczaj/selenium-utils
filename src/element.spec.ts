@@ -1,4 +1,4 @@
-import { getUrl, runTestServer } from "./utils/test-content";
+import { getUrl, runTestServer } from "./test-content";
 import { e2eTest } from "./test-base";
 import { By } from "./by";
 import * as http from "http";

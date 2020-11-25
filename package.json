@@ -11,6 +11,7 @@
     "express": "^4.17.1",
     "jest": "^26.5.2",
     "jest-runner-mocha": "^0.6.0",
+    "js-beautify": "^1.13.0",
     "mocha": "^8.0.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
