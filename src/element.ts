@@ -1,11 +1,13 @@
 import { Locator, WebDriver, WebElement, WebElementPromise } from "selenium-webdriver";
 import { AugmentedThenableWebDriver, AugmentedWebDriver } from "./driver/model";
+import { logFindElementError } from "./utils/logging";
 
 type WebElementClass = new(...args: any[]) => WebElement;
 
 export interface AugmentedWebElement extends Omit<WebElement, 'findElement' | 'getDriver'> {
   getDriver(): AugmentedThenableWebDriver;
   clickAnyway(): Promise<void>;
+  click(): Promise<void>;
   /**
    * The result element will not work with By.xpath selector
    * NotSupportedError: Failed to execute 'evaluate' on 'Document': The node provided is '#document-fragment', which is not a valid context node type.
@@ -18,7 +20,26 @@ export interface AugmentedWebElement extends Omit<WebElement, 'findElement' | 'g
 type AugmentedWebElementClass = new(...args: any[]) => AugmentedWebElement;
 
 function classFactory<TBaseClass extends WebElementClass>(BaseClass: TBaseClass): AugmentedWebElementClass {
-  return class extends BaseClass implements Omit<WebElement, 'findElement' | 'getDriver'>, AugmentedWebElement {
+  return class extends BaseClass implements AugmentedWebElement {
+
+    async click(): Promise<void> {
+      try {
+        return await super.click();
+      } catch (e) {
+        const context = await this.getAttribute('outerHTML');
+        console.error(`
+        ------------------------------------
+        Clicking on element failed:
+
+        ${context}
+        ------------------------------------
+        `);
+        throw e;
+      }
+    }
+
+    // NOTE: this changes return type
+    // @ts-ignore
     getDriver(): AugmentedThenableWebDriver {
       return super.getDriver() as unknown as AugmentedThenableWebDriver;
     }
@@ -37,7 +58,7 @@ function classFactory<TBaseClass extends WebElementClass>(BaseClass: TBaseClass)
         this.getDriver(),
         this.getDriver()
           .executeScript<WebElement>((element: any) => element.shadowRoot, this)
-          .then(fromWebElement)
+          .then(webElement => fromWebElement(this.getDriver(), webElement))
       );
     }
 
@@ -45,13 +66,23 @@ function classFactory<TBaseClass extends WebElementClass>(BaseClass: TBaseClass)
     // @ts-ignore
     findElement(locator: Locator, timeout?: number): ElementPromise {
       const orgFindElement = super.findElement.bind(this);
-      return new ElementPromise(this.getDriver(), this.getDriver().wait<Element>(async function (driver) {
+      return new ElementPromise(this.getDriver(), (async () => {
         try {
-          return await orgFindElement(locator);
+          return await this.getDriver().wait<Element>(
+            async function (this: AugmentedWebElement, driver: AugmentedThenableWebDriver) {
+              try {
+                return await orgFindElement(locator);
+              } catch (e) {
+                return false;
+              }
+            }.bind(this),
+            timeout)
         } catch (e) {
-          return false;
+          const parentElementHtml = await this.getAttribute('innerHTML');
+          logFindElementError(locator, parentElementHtml);
+          throw e;
         }
-      }, timeout));
+      })());
     }
   }
 }
@@ -76,6 +107,6 @@ export class Element extends classFactory(WebElement) {
   }
 }
 
-export function fromWebElement(webElement: WebElement): Element {
-  return new Element(webElement.getDriver() as AugmentedThenableWebDriver, webElement.getId());
+export function fromWebElement(driver: AugmentedThenableWebDriver, webElement: WebElement): Element {
+  return new Element(driver, webElement.getId());
 }

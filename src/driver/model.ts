@@ -1,5 +1,5 @@
 import { Locator, ThenableWebDriver, WebDriver, WebElementPromise } from "selenium-webdriver";
-import { ElementPromise } from "../page";
+import { ElementPromise } from "../element";
 
 export interface ScreenSize {
   width: number;
@@ -11,7 +11,7 @@ export interface DriverParams {
   timeout: number;
 }
 
-export interface AugmentedWebDriver extends WebDriver {
+export interface AugmentedWebDriver extends Omit<WebDriver, 'findElement'> {
   /**
    * The standard get gets substituted with getting the path relative to base url,
    * and this is the original get for absolute paths

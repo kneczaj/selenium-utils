@@ -1,4 +1,4 @@
-import { By as ByBase } from 'selenium-webdriver';
+import { By as ByBase, Locator } from 'selenium-webdriver';
 
 export class By extends ByBase {
   static content(content: string): By {
@@ -28,4 +28,8 @@ export class By extends ByBase {
   static tagAndContent(tag: string, content: string) {
     return ByBase.xpath(`//${tag}[contains(text(), '${content}')]`)
   }
+}
+
+export function isBy(locator: Locator): locator is By {
+  return (locator as By).using !== undefined && (locator as By).value !== undefined;
 }

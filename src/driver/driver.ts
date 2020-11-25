@@ -8,6 +8,7 @@ import {
 } from 'selenium-webdriver';
 import { AugmentedThenableWebDriver, AugmentedWebDriver, DriverParams, ScreenSize } from "./model";
 import { ElementPromise, fromWebElement } from "../element";
+import { logFindElementError } from "../utils/logging";
 
 /**
  * This adds internal overrides used by the tests
@@ -25,9 +26,16 @@ export function augmentDriver(driver: WebDriver, defaultTimeout: number, baseUrl
   function findWithWait(this: AugmentedThenableWebDriver, locator: Locator, timeout: number = defaultTimeout): ElementPromise {
     return new ElementPromise(
       this,
-      driver
-        .wait(until.elementLocated(locator), timeout)
-        .then(webElement => fromWebElement(webElement))
+      (async () => {
+        try {
+          const webElement = await driver.wait(until.elementLocated(locator), timeout);
+          return fromWebElement(this, webElement);
+        } catch(err) {
+          const pageContent = await driver.getPageSource();
+          logFindElementError(locator, pageContent);
+          throw err;
+        }
+      })()
     );
   }
   function getRelative(relativeUrl: string) {

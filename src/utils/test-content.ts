@@ -9,22 +9,22 @@ export function getUrl() {
 
 export function makePage(content: string) {
   return (`
-    <!DOCTYPE html>
-    <html lang="pl">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        <meta name="theme-color" content="#000000">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Test page</title>
-      </head>
-      <body>
-        <noscript>
-          You need to enable JavaScript to run this app.
-        </noscript>
-        <div id="root">${content}</div>
-      </body>
-    </html>
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="theme-color" content="#000000">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Test page</title>
+  </head>
+  <body>
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <div id="root">${content}</div>
+  </body>
+</html>
   `);
 }
 
